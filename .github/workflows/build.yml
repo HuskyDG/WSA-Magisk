@@ -1,7 +1,7 @@
 name: Build WSA Magisk
 on:
   schedule:
-    - cron: "30 2 1 * *"
+    - cron: "0 14 * * *"
   push:
     branches: [main]
   workflow_dispatch:
@@ -16,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [x64, arm64]
-        root: [magisk, none]
-        gapps: [MindTheGapps, none]
-        release: [retail]
-        compress-format: [7z]
+        arch: [x64]
+        release: [WIF]
+        gapps: [OpenGApps]
+        root: [magisk]
+        compress-format: [zip]
 
     steps:
       - name: Checkout
@@ -28,8 +28,13 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          sudo dpkg --add-architecture i386 
+          sudo mkdir -pm755 /etc/apt/keyrings
+          sudo wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
+          sudo wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources
           sudo apt-get update -y
-          sudo apt-get install -y whiptail setools lzip wine patchelf e2fsprogs python3-pip aria2 p7zip-full attr xz-utils unzip cabextract
+          sudo apt-get install --install-recommends winehq-staging
+          sudo apt-get install -y whiptail setools lzip patchelf e2fsprogs python3-pip aria2 p7zip-full attr xz-utils unzip cabextract
           sudo wget -P /usr/local/bin/ https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks
           sudo chmod +x /usr/local/bin/winetricks
           wget -P /home/runner/.cache/winetricks/msxml6/ https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}/wine/.cache/winetricks/msxml6/msxml6-KB973686-enu-amd64.exe
@@ -41,14 +46,14 @@ jobs:
 
       - name: Build WSA GAPPS ${{ matrix.root }} ${{ matrix.arch }}
         id: wsa
-        run: ./scripts/build.sh --arch ${{ matrix.arch }} --release-type ${{ matrix.release }} --magisk-ver stable --gapps-brand ${{ matrix.gapps }} --root-sol ${{ matrix.root }} --remove-amazon --compress-format ${{ matrix.compress-format }}
+        run: ./scripts/build.sh --arch ${{ matrix.arch }} --release-type ${{ matrix.release }} --magisk-ver delta --gapps-brand ${{ matrix.gapps }} --root-sol ${{ matrix.root }} --remove-amazon --compress-format ${{ matrix.compress-format }}
 
       - name: Prepare release tag
         id: date
         run: echo "date=$(date +'v%Y-%m-%d')" >> $GITHUB_OUTPUT
 
       - name: Upload build to release
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@master
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./output/${{ steps.wsa.outputs.artifact }}.${{ matrix.compress-format }}

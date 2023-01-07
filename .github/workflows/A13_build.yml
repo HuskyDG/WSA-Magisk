@@ -1,4 +1,4 @@
-name: Custom Build
+name: Android 13 Build
 on:
   workflow_dispatch:
     inputs:
@@ -71,15 +71,36 @@ jobs:
           sudo wget -P /usr/local/bin/ https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks
           sudo chmod +x /usr/local/bin/winetricks
           wget -P /home/runner/.cache/winetricks/msxml6/ https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}/wine/.cache/winetricks/msxml6/msxml6-KB973686-enu-amd64.exe
+          wget -P ./download/ https://download.microsoft.com/download/4/7/c/47c6134b-d61f-4024-83bd-b9c9ea951c25/appx/Microsoft.VCLibs.x64.14.00.Desktop.appx
+          wget -P ./download/xaml https://globalcdn.nuget.org/packages/microsoft.ui.xaml.2.8.2.nupkg
+          7z x ./download/xaml/*.nupkg -o./download/xaml/
+          mv ./download/xaml/tools/AppX/x64/Release/*.appx ./download/Microsoft.UI.Xaml_x64.appx
+          rm -rf ./download/xaml
           pip list --disable-pip-version-check | grep -E "^requests " >/dev/null 2>&1 || python3 -m pip install requests
           winetricks list-installed | grep -E "^msxml6" >/dev/null 2>&1 || winetricks msxml6 || abort
+
+      - name: Retrieve the user_code for WSA Preview Program, if exists
+        env:
+          USER_CODE: ${{ secrets.USER_CODE }}
+        if: env.USER_CODE != null
+        run: echo "user_code=$USER_CODE" > ./download/.ms_account
+
+      - name: Manually download the latest build from WSA Preview Program
+        env:
+          USER_CODE: ${{ secrets.USER_CODE }}
+        if: env.USER_CODE == null
+        run: |
+          wget -P ./download/wsa https://github.com/Howard20181/WSA-bundle/releases/download/v2211.40000.10.0/MicrosoftCorporationII.WindowsSubsystemForAndroid_2211.40000.10.0_neutral___8wekyb3d8bbwe.7z
+          7z x ./download/wsa/*.7z -o./download/
+          mv ./download/*.Msixbundle ./download/wsa-WIF.zip
+          rm -rf ./download/wsa
 
       - name: Grant exec permission to script 👑
         run: chmod +x ./scripts/build.sh
 
       - name: Build WSA 🏗️
         id: wsa
-        run: ./scripts/build.sh --arch ${{ inputs.arch }} --release-type ${{ inputs.release-type }} --magisk-ver ${{ inputs.magisk-ver }} --gapps-brand ${{ inputs.gapps-brand }} --gapps-variant ${{ inputs.gapps-variant }} --root-sol ${{ inputs.root-sol }} --remove-amazon --compress-format ${{ inputs.compress-format }}
+        run: ./scripts/build.sh --arch ${{ inputs.arch }} --release-type ${{ inputs.release-type }} --magisk-ver ${{ inputs.magisk-ver }} --gapps-brand ${{ inputs.gapps-brand }} --gapps-variant ${{ inputs.gapps-variant }} --root-sol ${{ inputs.root-sol }} --remove-amazon --skip-download-wsa --compress-format ${{ inputs.compress-format }}
 
       - name: Upload Artifact 🤌
         uses: actions/upload-artifact@v3
