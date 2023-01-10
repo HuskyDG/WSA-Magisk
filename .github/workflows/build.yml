@@ -44,9 +44,37 @@ jobs:
       - name: Grant executable permission
         run: chmod +x ./scripts/build.sh
 
+      - name: Add eligible Microsoft identity to the WSA Preview Program
+        env:
+          USER_CODE: ${{ secrets.USER_CODE }}
+        if: env.USER_CODE != null
+        run: |
+          mkdir -p ./download/ >/dev/null 2>&1
+          echo "user_code=$USER_CODE" > ./download/.ms_account
+
+      - name: Download WSA Preview build + VCLibs 14 + UI XAML manually (if no eligible Microsoft identity is set)
+        env:
+          USER_CODE: ${{ secrets.USER_CODE }}
+        if: env.USER_CODE == null
+        run: |
+          wget -P ./download/wsa https://github.com/sn-o-w/WSA-bundle/releases/download/v2211.40000.11.0/MicrosoftCorporationII.WindowsSubsystemForAndroid_2211.40000.11.0_neutral___8wekyb3d8bbwe.7z
+          7z x ./download/wsa/*.7z -o./download/
+          mv ./download/*.Msixbundle ./download/wsa-${{ matrix.release }}.zip
+          rm -rf ./download/wsa
+          wget -P ./download/ https://download.microsoft.com/download/4/7/c/47c6134b-d61f-4024-83bd-b9c9ea951c25/appx/Microsoft.VCLibs.x64.14.00.Desktop.appx
+          wget -P ./download/xaml https://globalcdn.nuget.org/packages/microsoft.ui.xaml.2.8.2.nupkg
+          7z x ./download/xaml/*.nupkg -o./download/xaml/
+          mv ./download/xaml/tools/AppX/x64/Release/*.appx ./download/Microsoft.UI.Xaml_x64.appx
+          rm -rf ./download/xaml
+
       - name: Build WSA GAPPS ${{ matrix.root }} ${{ matrix.arch }}
         id: wsa
-        run: ./scripts/build.sh --arch ${{ matrix.arch }} --release-type ${{ matrix.release }} --magisk-ver delta --gapps-brand ${{ matrix.gapps }} --root-sol ${{ matrix.root }} --remove-amazon --compress-format ${{ matrix.compress-format }}
+        run: |
+          if [ -f "./download/.ms_account" ]; then
+              ./scripts/build.sh --arch ${{ matrix.arch }} --release-type ${{ matrix.release }} --magisk-ver delta --gapps-brand ${{ matrix.gapps }} --root-sol ${{ matrix.root }} --remove-amazon --compress-format ${{ matrix.compress-format }}
+          else
+              ./scripts/build.sh --arch ${{ matrix.arch }} --release-type ${{ matrix.release }} --magisk-ver delta --gapps-brand ${{ matrix.gapps }} --root-sol ${{ matrix.root }} --remove-amazon --skip-download-wsa --compress-format ${{ matrix.compress-format }}
+          fi
 
       - name: Prepare release tag
         id: date
