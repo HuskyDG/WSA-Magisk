@@ -16,18 +16,18 @@ jobs:
       - name: Merge Upstream
         uses: exions/merge-upstream@v1
         with:
-          upstream: LSPosed/MagiskOnWSALocal    # set the upstream repo
-          upstream-branch: main   # set the upstream branch to merge from
-          branch: main          # set the branch to merge to
-          token: ${{ secrets.GITHUB_TOKEN }}  # set the token to push to the repo
+          upstream: LSPosed/MagiskOnWSALocal # set the upstream repo
+          upstream-branch: main # set the upstream branch to merge from
+          branch: main # set the branch to merge to
+          token: ${{ secrets.GITHUB_TOKEN }} # set the token to push to the repo
 
       - name: Create telegram alert for failure on scheduled run
         if: failure() && github.event_name == 'schedule'
         uses: appleboy/telegram-action@master 
         with: 
-          to: ${{ secrets.TELEGRAM_TO }}  # set the telegram chat id
-          token: ${{ secrets.TELEGRAM_TOKEN }}  # set the telegram bot token
-          message: |  # set the message
+          to: ${{ secrets.TELEGRAM_TO }} # set the telegram chat id
+          token: ${{ secrets.TELEGRAM_TOKEN }} # set the telegram bot token
+          message: | # set the message
             Merge upstream failed
             Origin: https://github.com/${{ github.repository }}
             Upstream: https://github.com/LSPosed/MagiskOnWSALocal
