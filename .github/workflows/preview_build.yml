@@ -1,5 +1,3 @@
-# Kinda useless this at this moment since 2211.40000.11.0 is released for Insiders
-# Keeping this file and modifying it in case new WSA Preview builds will get released in the future
 name: WSA Preview Build
 on:
   workflow_dispatch:
@@ -46,7 +44,7 @@ jobs:
           USER_CODE: ${{ secrets.USER_CODE }}
         if: env.USER_CODE == null
         run: |
-          wget -P ./download/wsa https://github.com/sn-o-w/WSA-bundle/releases/download/v2211.40000.11.0/MicrosoftCorporationII.WindowsSubsystemForAndroid_2211.40000.11.0_neutral___8wekyb3d8bbwe.7z
+          wget -P ./download/wsa https://github.com/sn-o-w/WSA-bundle/releases/download/v2301.40000.4.0/MicrosoftCorporationII.WindowsSubsystemForAndroid_2301.40000.4.0_neutral___8wekyb3d8bbwe.7z
           7z x ./download/wsa/*.7z -o./download/
           mv ./download/*.Msixbundle ./download/wsa-${{ matrix.release }}.zip
           rm -rf ./download/wsa
