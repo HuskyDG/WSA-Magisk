@@ -72,9 +72,21 @@ jobs:
       - name: Grant exec permission to script 👑
         run: chmod +x ./scripts/build.sh
 
+      - name: Download WSA Preview build + VCLibs 14 + UI XAML manually 🧙🏻‍♂️
+        run: |
+          wget -P ./download/wsa https://github.com/sn-o-w/WSA-bundle/releases/download/v2301.40000.4.0/MicrosoftCorporationII.WindowsSubsystemForAndroid_2301.40000.4.0_neutral___8wekyb3d8bbwe.7z
+          7z x ./download/wsa/*.7z -o./download/
+          mv ./download/*.Msixbundle ./download/wsa-${{ inputs.release-type }}.zip
+          rm -rf ./download/wsa
+          wget -P ./download/ https://download.microsoft.com/download/4/7/c/47c6134b-d61f-4024-83bd-b9c9ea951c25/appx/Microsoft.VCLibs.x64.14.00.Desktop.appx
+          wget -P ./download/xaml https://globalcdn.nuget.org/packages/microsoft.ui.xaml.2.8.2.nupkg
+          7z x ./download/xaml/*.nupkg -o./download/xaml/
+          mv ./download/xaml/tools/AppX/x64/Release/*.appx ./download/Microsoft.UI.Xaml_x64.appx
+          rm -rf ./download/xaml
+
       - name: Build WSA 🏗️
         id: wsa
-        run: ./scripts/build.sh --arch ${{ inputs.arch }} --release-type ${{ inputs.release-type }} --magisk-ver ${{ inputs.magisk-ver }} --gapps-brand ${{ inputs.gapps-brand }} --gapps-variant ${{ inputs.gapps-variant }} --root-sol ${{ inputs.root-sol }} --remove-amazon --compress-format ${{ inputs.compress-format }}
+        run: ./scripts/build.sh --arch ${{ inputs.arch }} --release-type ${{ inputs.release-type }} --magisk-ver ${{ inputs.magisk-ver }} --gapps-brand ${{ inputs.gapps-brand }} --gapps-variant ${{ inputs.gapps-variant }} --root-sol ${{ inputs.root-sol }} --remove-amazon --skip-download-wsa --compress-format ${{ inputs.compress-format }}
 
       - name: Upload Artifact 🤌
         uses: actions/upload-artifact@v3
